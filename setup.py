@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pass_nice',
-    version='2.1.0',
+    version='2.1.1',
     description='NICE 아이디 본인인증 요청을 자동화해주는 비공식 모듈',
     author='shy9-29',
     author_email='sunr1s2@proton.me',

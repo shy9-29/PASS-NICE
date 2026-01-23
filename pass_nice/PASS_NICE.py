@@ -14,6 +14,7 @@ from .exceptions import (
     SessionNotInitializedError,
     ValidationError,
 )
+
 from .types import Result, VerificationData
 
 
@@ -56,11 +57,12 @@ class PASS_NICE:
         
         self._AUTH_TYPE: str = ""
 
-    async def init_session(self, auth_type: Literal["sms", "app_push", "app_qr"]) -> Result[None]: 
+    async def init_session(self, auth_type: Literal["sms", "app_push", "app_qr"], checkplus_custom_url: Optional[str] = None) -> Result: 
         """현재 클래스의 본인인증 세션을 초기화합니다.
         
         Args:
-            auth_type: 인증 진행 방식 ('sms', 'pass', 'qr')
+            auth_type: 인증 진행 방식 ('sms', 'app_push', 'app_qr')
+            checkplus_custom_url: checkplus 데이터 요청 URL (기본값: 한국도로교통공사)
 
         Returns:
             Result[None]: 성공 시 반환되는 Result 객체
@@ -76,8 +78,11 @@ class PASS_NICE:
         if self._is_initialized:
             raise SessionAlreadyInitializedError()
 
+        if checkplus_custom_url is None:
+            checkplus_custom_url = 'https://www.ex.co.kr:8070/recruit/company/nice/checkplus_success_company.jsp'
+
         try:
-            checkplus_data_request = await self.client.get('https://www.ex.co.kr:8070/recruit/company/nice/checkplus_main_company.jsp')
+            checkplus_data_request = await self.client.get(checkplus_custom_url)
             checkplus_data = checkplus_data_request.text
             
         except httpx.RequestError as e:
@@ -251,7 +256,7 @@ class PASS_NICE:
             birthdate=datetime.strptime(birthdate, "%y%m%d"),
             gender="1" if gender in ["1", "3", "5", "7"] else "2",
             phone_number=phone_number,
-            mobile_carrier=self._cell_corp # type: ignore
+            mobile_carrier=self._cell_corp
         )
 
         self._is_verify_sent = True
@@ -286,7 +291,7 @@ class PASS_NICE:
             raise SessionNotInitializedError("PASS 본인인증 요청을 보내기 위해서는 세션 초기화가 필요합니다.")
 
         if not self._AUTH_TYPE == "app_push":
-            raise SessionNotInitializedError("PASS 본인인증 요청을 보내기 위해서는 SMS 방식으로 세션을 초기화해주셔야 합니다.")
+            raise SessionNotInitializedError("PASS 본인인증 요청을 보내기 위해서는 app_push 방식으로 세션을 초기화해주셔야 합니다.")
 
         _, phone_number, captcha_answer = self._verify_input("000000", phone_number, captcha_answer)
 
@@ -347,7 +352,7 @@ class PASS_NICE:
                 }
             )
         
-        except httpx.NetworkError as e:
+        except httpx.RequestError as e:
             raise NetworkError(f"나이스 서버와 통신에 실패했습니다: {str(e)}", 1)
 
         match = re.search(r'<div class="qr_num">(\d+)</div>', qrcode_request.text)
@@ -538,7 +543,7 @@ class PASS_NICE:
             birthdate=datetime.strptime(birthdate_str, "%Y%m%d"),
             gender=gender,  # type: ignore
             phone_number=phone_number,
-            mobile_carrier=self._cell_corp  # type: ignore
+            mobile_carrier=self._cell_corp
         )
 
     # ----- helper ----- #

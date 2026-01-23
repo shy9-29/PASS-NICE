@@ -10,7 +10,7 @@ NICE 아이디 SMS 본인인증 기능을 지원하며, MVNO를 포함한 모든
     await client.init_session()
 """
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 __author__ = "Sunrise"
 __email__ = "sunr1s2@proton.me"
 
